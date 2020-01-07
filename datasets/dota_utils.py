@@ -6,6 +6,12 @@ import shapely.geometry as shgeo
 import os
 import re
 import math
+
+classid_15 = ['plane', 'baseball-diamond', 'bridge', 'ground-track-field', 'small-vehicle', 'large-vehicle', 'ship',
+              'tennis-court', 'basketball-court', 'storage-tank', 'soccer-ball-field', 'roundabout', 'harbor',
+              'swimming-pool', 'helicopter']
+
+
 """
 Assume /data/vehicle_classification contains three folders: train, validation, test
 train and validation contain images, label while test only contain images
@@ -72,8 +78,24 @@ def parse_annotation(filename):
             break
     return objects
 
+def parse_annotation_2(filename):
 
+    """
+        parse the dota ground truth in the format:
+        [x1, y1, x2, y2, x3, y3, x4, y4]
+    :param filename:
+    :return:
+    """
+    objects = parse_annotation(filename)
+    for obj in objects:
+        obj['poly'] = TuplePoly2Poly(obj['poly'])
+        obj['poly'] = list(map(int, obj['poly']))
+    return objects
+
+def TuplePoly2Poly(poly):
+    outpoly = [poly[0][0], poly[0][1], poly[1][0], poly[1][1], poly[2][0], poly[2][1], poly[3][0], poly[3][1]]
+    return outpoly
 
 
 if __name__=='__main__':
-    getFilesfromCluster(dotapath='/Users/iris/Desktop/DOTA')
+    getFilesfromCluster(dotapath='...')
