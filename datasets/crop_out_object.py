@@ -1,6 +1,7 @@
 import os
 from PIL import Image
 import shapely.geometry as shgeo
+import cv2
 
 
 object_categories = ['plane', 'baseball-diamond', 'bridge', 'ground-track-field', 'small-vehicle', 'large-vehicle', 'ship',
@@ -64,7 +65,7 @@ def TuplePoly2Poly(poly):
 
 
 
-def cropout_object(filename, imagepath, size):
+def cropout_object(root, filename, imagepath, size):
     """
     when area below 200, assume it lost the meaning already but should consider the size of original image
     so it will be modified by proportion
@@ -80,9 +81,9 @@ def cropout_object(filename, imagepath, size):
     for obj in objects:
         poly = obj['poly']
         area = obj['area']
-        print(area)
+        id = obj['name']
 
-        if area < 200:
+        if area < 200:                                              # whether area is too small to be useless
             continue
         else:
             xmin = int(min(poly[0], poly[2], poly[4], poly[6]))     # left
@@ -91,7 +92,8 @@ def cropout_object(filename, imagepath, size):
             ymax = int(max(poly[1], poly[3], poly[5], poly[7]))     # bottom
             subimage = im.crop((xmin, ymin, xmax, ymax))
             resizeimg = subimage.resize((size, size), Image.ANTIALIAS)
-            resizeimg.show()
+            resizeimg.save(root + id + '/' + id + '_' + str(area) + '.png')
+            #resizeimg.show()
 
 def crop_batches(root, label, img):
     """
@@ -111,12 +113,11 @@ def crop_batches(root, label, img):
         for i in range(len(labelname)):
             labeldir = os.path.join(root + label, labelname[i])
             imgdir = os.path.join(root + img, imgname[i])
-            cropout_object(labeldir, imgdir, 200)
+            cropout_object(root, labeldir, imgdir, 200)
 
 
 
-crop_batches('/home/dingjin/test/plane/', 'labelTxt', 'JPEGImages')
-
+crop_batches('/Users/iris/Desktop/DOTA/train/', 'labels', 'images')
 
 
 
