@@ -2,6 +2,11 @@ import os, csv
 from PIL import Image
 import shapely.geometry as shgeo
 import pandas as pd
+from torch.utils.data.dataset import Dataset
+from torchvision import transforms
+import numpy as np
+import torch.utils.data
+
 
 
 
@@ -152,7 +157,50 @@ def crop_batches(root, label, img):
 
 
 
+class DOTAdataset(Dataset):
+    """
+
+    """
+
+    def __init__(self, csv_path):
+        self.to_tensor = transforms.ToTensor()
+        self.data_info = pd.read_csv(csv_path, header=None)
+        self.transform = transforms
+        self.image_arr = np.asarray(self.data_info.iloc[:, 0])
+        self.label_arr = np.asarray(self.data_info.iloc[:, 1])
+        self.operation_arr = np.asarray(self.data_info.iloc[:, 2])  #  maybe later abut difficult
+        self.data_len = len(self.data_info.index)
+
+    def __getitem__(self, index):
+        single_image_name = self.image_arr[index]
+        img_as_img = Image.open(single_image_name)
+        some_operation = self.operation_arr[index]
+        if some_operation:
+            #
+            #
+            pass
+        img_as_tensor = self.to_tensor(img_as_img)
+        single_image_label = self.label_arr[index]
+        return (img_as_tensor, single_image_label)
+
+
+
+    def __len__(self):
+        return self.data_len
+
+
 crop_batches('/Users/iris/Desktop/DOTA/train/', 'labels', 'images')
 write_csv('/Users/iris/Desktop/DOTA/train/')
 
-
+if __name__ == "__main__":
+    # define transforms
+    transformations = transforms.Compose([transforms.ToTensor()])
+    # custom dataset
+    classification_from_dota = DOTAdataset('/Users/iris/Desktop/DOTA/train/list.csv', 28, 28, transformations)
+    # define data loader
+    dota_dataset_loader = torch.utils.data.DataLoader(dataset=classification_from_dota,
+                                                    batch_size=10,
+                                                    shuffle=False)
+    for images, labels in dota_dataset_loader:
+        # transfer data to models
+        print(images)
