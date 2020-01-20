@@ -1,57 +1,98 @@
 from six.moves import cPickle as pickle
-import csv
-import sys
-sys.path.insert(0, '.')
+import numpy as np
+import imageio
 
 """
 ***Main Function***
-1. get train/test files
+1. get train/test.txt files
 2. parse train/test files
-3. generate train/test files 
+3. generate train/test.pkl files 
+
+***Additional Function***
+the originla image data is going to be transformed in range of 0 to 1
+
+***Usage***
+pls change 'train' to 'test', and v.v
+
 """
 
 ROOT = '/home/dingjin/HiwiJob/example/'
-txt_file = ['train', 'test']
+class_id = ['plane', 'baseball-diamond', 'bridge', 'ground-track-field', 'small-vehicle', 'large-vehicle', 'ship',
+            'tennis-court', 'basketball-court', 'storage-tank', 'soccer-ball-field', 'roundabout', 'harbor',
+            'swimming-pool', 'helicopter']
 
 
-#def search_image():
-#    root_dir = ROOT
-#    return f'{root_dir}/{csv_file}/'
+def normalize_image(x):
+    """
+
+    :param x: input image data in numpy array
+    :return:
+    """
+    min_val = np.min(x)
+    max_val = np.max(x)
+    x = (x - min_val)/(max_val - min_val)
+    return x
 
 
+def train_image2numpy():
+    img = []
+    cls = []
+    with open(ROOT + 'train.txt', 'r') as f:
+        for line in f:
+            image_path = line.split(" ", 1)[0]
+            id = line.split(" ", 1)[1].strip()
+            cls.append(id)
+            img.append(imageio.imread(image_path))
+            normalize_image(img)
+    return img, cls
 
+def test_image2numpy():
+    img = []
+    cls = []
+    with open(ROOT + 'test.txt', 'r') as f:
+        for line in f:
+            image_path = line.split(" ", 1)[0]
+            id = line.split(" ", 1)[1].strip()
+            cls.append(id)
+            img.append(imageio.imread(image_path))
+            normalize_image(img)
+    return img, cls
+
+def normalize_class_id(class_id):
+    """
+    Mapping class-id to int
+    :param x: a list of class-id
+    :Attention: DOTA contains 15 classes
+    :return: number of labels, number of class
+    """
+    dict_id = {}
+    i = -1
+    for item in class_id:
+        if(i > 0 and item in dict_id):
+            continue
+        else:
+            i = i + 1
+            dict_id[item] = i
+
+    label_list = []
+    for item in class_id:
+        label_list.append(dict_id[item])
+
+    encoded = np.zeros((len(label_list), 15))
+
+    for idx, val in enumerate(label_list):
+        encoded[idx, val] = 1
+    return encoded
+
+def preprocess_and_save():
+    features1 = train_image2numpy()[0]
+    labels1 = normalize_class_id(train_image2numpy()[1])
+    pickle.dump((features1, labels1), open(ROOT + 'train.pkl', 'wb'))
+    features2 = test_image2numpy()[0]
+    labels2 = test_image2numpy()[1]
+    pickle.dump((features2, labels2), open(ROOT + 'test.pkl', 'wb'))
 
 if __name__ == '__main__':
-    print("Getting Dataset")
-    train = []
-    with open(f'{ROOT}/train.txt', 'r') as f:
-        image_path = f.readlines()
-        print(image_path)
+    preprocess_and_save()
 
 
-
-
-
-
-
-
-
-"""
-def pickle_from_csv(root):
-
-    for i in range(len(csv_file)):
-        csv_path = root + csv_file[i] + '.csv'
-        pkl_path = root + csv_file[i] + '.csv'
-        print(csv_path, pkl_path)
-        x = []
-        with open(csv_path, 'r') as f:
-            reader = csv.reader(f)
-            for line in reader:x.append(line)
-        with open(pkl_path, 'wb') as f:
-            pickle.dump(x, f, pickle.HIGHEST_PROTOCOL)
-
-
-
-pickle_from_csv('/home/dingjin/HiwiJob/example/')
-
-"""
