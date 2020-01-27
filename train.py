@@ -6,21 +6,18 @@ import os
 import torch
 from torch.autograd import Variable
 import logging as log
-from pprint import pformat
-#from utils.hyperparam import HyperParams
-#from utils.preparation import *
-#from tasks import classification
 
 from tensorboardX import SummaryWriter
 from utils.preparation import get_training_dataloader, get_network, get_test_dataloader, WarmUpLR
 from config import settings
 
-
 def train(epoch):
 
     net.train()
+    #print(net.train())
     for batch_index, (images, labels) in enumerate(cifar100_training_loader):
-        if epoch <= args.warm:
+
+        if epoch <= config['warm']:
             warmup_scheduler.step()
 
         images = Variable(images)
@@ -48,7 +45,7 @@ def train(epoch):
             loss.item(),
             optimizer.param_groups[0]['lr'],
             epoch=epoch,
-            trained_samples=batch_index * args.b + len(images),
+            trained_samples=batch_index * config['batch_size'] + len(images),
             total_samples=len(cifar100_training_loader.dataset)
         ))
 
@@ -97,35 +94,40 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('model_name', help='model name', default=None)
-    parser.add_argument('-gpu', type=bool, default=True, help='use gpu or not')
-    args = parser.parse_args()
-    config = initEnv(args.model_name, train_flag=1)
 
-    net = get_network(args, use_gpu=args.gpu)
+    args = parser.parse_args()
+
+    config = initEnv(args.model_name, train_flag=1)
+    net = get_network(args, use_gpu= True)
+
 
 
     cifar100_training_loader = get_training_dataloader(
         config['CIFAR100_TRAIN_MEAN'],
         config['CIFAR100_TRAIN_STD'],
-        num_workers=config['train']['nworkers'],
-        batch_size=config['train']['batch_size'],
+        num_workers=config['nworkers'],
+        batch_size=config['batch_size'],
         shuffle=config['shuffle']
     )
+
 
     cifar100_test_loader = get_test_dataloader(
         config['CIFAR100_TRAIN_MEAN'],
         config['CIFAR100_TRAIN_STD'],
-        num_workers=config['test']['nworkers'],
-        batch_size=config['test']['batch_size'],
+        num_workers=config['nworkers'],
+        batch_size=config['batch_size'],
         shuffle=config['shuffle']
     )
 
     loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
-    train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=config['MILESTONES'],
-                                                     gamma=0.2)  # learning rate decay
+    optimizer = optim.SGD(net.parameters(), lr=config['lr'], momentum=0.9, weight_decay=5e-4)
+
+    train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=config['MILESTONES'], gamma=0.2)  # learning rate decay
+
     iter_per_epoch = len(cifar100_training_loader)
-    warmup_scheduler = WarmUpLR(optimizer, iter_per_epoch * args.warm)
+    print(iter_per_epoch)
+
+    warmup_scheduler = WarmUpLR(optimizer, iter_per_epoch * config['warm'])
     checkpoint_path = os.path.join(config['CHECKPOINT_PATH'], args.model_name, config['TIME_NOW'])
 
  # use tensorboard
@@ -142,9 +144,8 @@ if __name__ == '__main__':
     checkpoint_path = os.path.join(checkpoint_path, '{net}-{epoch}-{type}.pth')
 
     best_acc = 0.0
-
     for epoch in range(1, config['EPOCH']):
-        if epoch > args.warm:
+        if epoch > config['warm']:
             train_scheduler.step(epoch)
 
         train(epoch)
@@ -152,11 +153,11 @@ if __name__ == '__main__':
 
         # start to save best performance model after learning rate decay to 0.01
         if epoch > config['MILESTONES'][1] and best_acc < acc:
-            torch.save(net.state_dict(), checkpoint_path.format(net=args.net, epoch=epoch, type='best'))
+            torch.save(net.state_dict(), checkpoint_path.format(net=args.model_name, epoch=epoch, type='best'))
             best_acc = acc
             continue
 
         if not epoch % config['SAVE_EPOCH']:
-            torch.save(net.state_dict(), checkpoint_path.format(net=args.net, epoch=epoch, type='regular'))
+            torch.save(net.state_dict(), checkpoint_path.format(net=args.model_name, epoch=epoch, type='regular'))
 
     writer.close()
