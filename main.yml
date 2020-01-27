@@ -1,0 +1,3 @@
+cfg_dict:
+  mobilenetv2: MobileNetv2.yml
+  Xception: Xception.yml
