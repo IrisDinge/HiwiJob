@@ -1,0 +1,113 @@
+dataset:
+    dota:
+        root_dir: '/home/dingjin/HiwiJob/example/train/'
+        txt_out_dir: '/home/dingjin/HiwiJob/example/train/'
+      # for classification, unit pixel
+      # Size of every single item
+        crop_out_size: 400
+      # Ignoring, below filter_size
+        filter_size: 20
+        resplit: 'True'
+        custom_dataloader: 'True'
+        object_categories: ['plane', 'baseball-diamond', 'bridge', 'ground-track-field', 'small-vehicle', 'large-vehicle', 'ship',
+                            'tennis-court', 'basketball-court', 'storage-tank', 'soccer-ball-field', 'roundabout', 'harbor',
+                            'swimming-pool', 'helicopter']
+
+    cifar10:
+        path: './cifar-10-10...'
+
+
+task:
+    classification:
+        train:
+            dataset: 'CIFAR10'
+            gpus: "0"
+            model_name: 'mobilenetv2'
+            clear: False
+            input_shape: [400, 400]
+            output_root: "outputs"
+            output_version: "baseline"
+            backup_name: "weights"
+            log_name: "logs"
+            shuffle: 'True'
+            lr: 0.1
+            batch_size: 128
+            nworkers: 2
+            # Weights_dir
+            checkpoint_path: 'checkpoint'
+            epoch: 200
+            milestones: [60, 120, 160]
+            time_now: datetime.now().isoformat()
+            # Tensorboard
+            log_dir: 'runs'
+            save_epoch: 10
+            # Pre-train
+            pretrain: 'False'
+            pretrain_dir: '/home/gritzner/tmp/...'
+
+        test:
+            gpus: "7"
+            nworkers: 8
+            input_shape: [608, 608]
+            batch_size: 16
+            weights: "outputs/..."
+            results: "results"
+
+    object_detection:
+        train:
+            gpus: "0"
+            clear: False
+            input_shape: [400, 400]
+            output_root: "outputs"
+            output_version: "baseline"
+            backup_name: "weights"
+            log_name: "logs"
+            shuffle: 'True'
+            lr: 0.1
+            batch_size: 128
+            model_name: 'mobilenetv2'
+            nworkers: 2
+            # weights_dir
+            checkpoint_path: 'checkpoint'
+            epoch: 200
+            milestones: [60, 120, 160]
+            time_now: datetime.now().isoformat()
+            # tensorboard
+            log_dir: 'runs'
+            save_epoch: 10
+
+        test:
+            gpus: "7"
+            nworkers: 8
+            input_shape: [608, 608]
+            batch_size: 16
+            weights: "outputs/..."
+            conf_thresh: 0.005
+            nms_thresh: 0.45
+            results: "results"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
