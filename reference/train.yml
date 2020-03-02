@@ -1,0 +1,24 @@
+task: "classification"
+classificaion_params:
+  dataset: "CIFAR10"
+  model: "MobileNetv2"
+  epoch: 200
+  lr: 0.001
+  gpu: "0"
+  warm: 1
+  checkpoint_path: 'checkpoint'
+  time_now: datetime.now().isoformat()
+  log_dir: "./run"
+  milestones: [60, 120, 160]
+  save_epoch: 10
+  batch_size: 128
+
+CIFAR10:
+  path: "./data"
+  mean: [0.5070751592371323, 0.48654887331495095, 0.4409178433670343]
+  std: [0.2673342858792401, 0.2564384629170883, 0.27615047132568404]
+  num_workers: 2
+  batch_size: 128
+
+MobileNetv2:
+  pre_trained_weight: ~
