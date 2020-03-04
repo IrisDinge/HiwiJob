@@ -1,10 +1,10 @@
-task: "classification"
+task: "dataprocessing"
 classificaion_params:
   dataset: "CIFAR10"
   model: "MobileNetv2"
   epoch: 200
   lr: 0.001
-  gpu: "0"
+  gpu: "3"
   warm: 1
   checkpoint_path: 'checkpoint'
   time_now: datetime.now().isoformat()
@@ -22,3 +22,12 @@ CIFAR10:
 
 MobileNetv2:
   pre_trained_weight: ~
+
+dataprocessing_params:
+  dataset: "DOTA"
+
+DOTA:
+  path: "/home/dingjin/trivalDota/"
+  scale: 3
+  cls: ["ship", "large-vehicle", "small-vehicle"]
+
