@@ -163,7 +163,7 @@ class DOTA():
                     size = factor * (bb[1] - bb[0])
                     bb[0] = np.maximum(bb[0] - size, (0, 0))
                     bb[1] = np.minimum(bb[1] + size, img.size)
-                    img_o = img.crop(bb[0, 0], bb[0, 1], bb[1, 0], bb[1, 1])
+                    img_o = img.crop((bb[0, 0], bb[0, 1], bb[1, 0], bb[1, 1]))
                     img_o =img_o.resize((patch_size, patch_size), resample = PIL.Image.BICUBIC)
                     img_o = np.array(img_o)
                     if v.bands == "RGB":
