@@ -6,16 +6,19 @@ import numpy as np
 import PIL.Image
 import yaml
 
+
 class DOTA():
+
     def __init__(self, config):
         print("Processing DOTA from", config.DOTA.path, "...")
         self.scale = config.DOTA.scale
         self.cls = config.DOTA.cls
         self.path = config.DOTA.path
-        self.trainingpath = config.DOTA.path + "training/labelTxt/*.txt"
-        self.validationpath = config.DOTA.path + "validation/labelTxt/*.txt"
+        self.trainingpath = config.DOTA.rootpath + "training/labelTxt/*.txt"
+        self.validationpath = config.DOTA.rootpath + "validation/labelTxt/*.txt"
 
     def parse_object(line):
+
         obj = types.SimpleNamespace()
         tokens = line.split(" ")
         obj.corners = [(float(tokens[2 * i]), float(tokens[2 * i + 1])) for i in range(4)]
@@ -24,35 +27,47 @@ class DOTA():
         return obj.__dict__
 
     def run(self):
-        files = list(glob.iglob(self.trainingpath))
-        files.extend(glob.iglob(self.validationpath))
-        d = {}
-        for fn in files:
-            key = fn.split("/")[-1].split(".")[0]
-            with open(fn, "r") as f:
-                lines = f.readlines()
-            for i, line in enumerate(lines):
-                if line[-1] == "\n":
-                    lines[i] = line[:-1]
-            d[key] = {"path": fn, "source": lines[0].split(":")[1], "gsd": lines[1].split(":")[1], "objects": []}
+        if os.listdir(self.path):
+            files = os.listdir(self.path)
+            for file in files:
+                if os.path.splitext(file)[-1] != ".npz":
+                    print("please check your preprocessed dataset DOTA")
+                else:
+                    print("dataset DOTA is ready to go!")
+                    break
 
-            for line in lines[2:]:
-                d[key]["objects"].append(DOTA.parse_object(line))
+        else:
+            files = list(glob.iglob(self.trainingpath))
+            files.extend(glob.iglob(self.validationpath))
+            d = {}
+            for fn in files:
+                key = fn.split("/")[-1].split(".")[0]
+
+                with open(fn, "r") as f:
+                    lines = f.readlines()
+                for i, line in enumerate(lines):
+                    if line[-1] == "\n":
+                        lines[i] = line[:-1]
+                d[key] = {"path": fn, "source": lines[0].split(":")[1], "gsd": lines[1].split(":")[1], "objects": []}
+
+                for line in lines[2:]:
+                    d[key]["objects"].append(DOTA.parse_object(line))
 
 
-        if not os.path.exists("cfgs/DOTA.yml"):
-            os.system(r"touch %s" % "cfgs/DOTA.yml")
+            if not os.path.exists("cfgs/rawDOTA.yml"):
+                os.system(r"touch %s" % "cfgs/rawDOTA.yml")
 
-        with open("cfgs/DOTA.yml", "w") as f:
-            yaml.dump(d, f)
+            with open("cfgs/rawDOTA.yml", "w") as f:
+                yaml.dump(d, f)
 
-        del d
-        del DOTA.parse_object
-        del files
+            del d
+            del DOTA.parse_object
+            del files
+            DOTA.clean(self)
 
     def clean(self):
 
-        with open("cfgs/DOTA.yml", "r") as f:
+        with open("cfgs/rawDOTA.yml", "r") as f:
             d = yaml.load(f, yaml.FullLoader)
         print(len(d))
 
@@ -72,12 +87,12 @@ class DOTA():
             del d[key]
 
         del remove
-        print(len(d))
+
 
         for k, v in d.items():
             path = v["path"][:-3] + "png"
             tokens = path.split("/")
-            tokens[5] = "images"     ###default: 7 (may change depends on different directory)
+            tokens[4] = "images"     ###default: 7 (may change depends on different directory)
             v["img_path"] = "/".join(tokens)
             img = PIL.Image.open(v["img_path"])
             v["bands"] = "".join(img.getbands())
@@ -85,15 +100,17 @@ class DOTA():
 
         del img
 
-        if not os.path.exists("cfgs/DOTA_cleaned.yml"):
-            os.system(r"touch %s" % "cfgs/DOTA_cleaned.yml")
+        if not os.path.exists("cfgs/DOTA.yml"):
+            os.system(r"touch %s" % "cfgs/DOTA.yml")
 
-        with open("cfgs/DOTA_cleaned.yml", "w") as f:
+        with open("cfgs/DOTA.yml", "w") as f:
             yaml.dump(d, f)
+
+        DOTA.pack(self)
 
     def pack(self):
 
-        with open("cfgs/DOTA_cleaned.yml", "r") as f:
+        with open("cfgs/DOTA.yml", "r") as f:
             d = yaml.load(f, yaml.FullLoader)
         cls_map = {c: i for i, c in enumerate(self.cls)}
         d2 = {}
@@ -108,7 +125,7 @@ class DOTA():
                 v.objects[i] = o
             if len(v.objects) > 0:
                 d2[k] = v
-        print(len(d), len(d2))
+        print("training set", len(d), "testing set", len(d2))
         d = d2
         del d2
 
@@ -137,13 +154,14 @@ class DOTA():
                         for c in range(3):
                             train_x[i, :, :, c] = img_o
                     i += 0
-                np.savez_compressed("data/dota/dota_%s_%i_scale_0.npz" % ("_".join(self.cls), patch_size), x=train_x, y=train_y)
+                np.savez_compressed("data/dota/preprocessed/dota_%s_%i_scale_0.npz" % ("_".join(self.cls), patch_size), x=train_x, y=train_y)
 
         del train_x
         del train_y
         del i
         del n
 
+"""
         factor = 0.5 * (2 * self.scale - 1)
         n = 0
         for v in d.values():
@@ -182,31 +200,7 @@ class DOTA():
             del n
             del factor
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+"""
 
 
 
